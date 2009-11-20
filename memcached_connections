@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+#
+# Plugin to monitor memcache statistics
+
+case ARGV[0]
+when "config"
+  puts %Q{
+    graph_title Memcached connections
+    graph_args --base 1000 -l 0
+    graph_vlabel connections
+    graph_category memcached
+    graph_info This graph monitors the connections to the memcached server.
+    connections.label connections
+    connections.info Number of connections to memcached
+    connections.min 0
+    connections.draw AREA
+  }.gsub!(/^\s*/, "")
+when "autoconf"
+  puts "yes"
+else
+  require "socket"
+
+  TCPSocket.open("localhost", "11211") do |socket|
+    socket.send("stats\r\n", 0)
+    stats = socket.recv(4096)
+    puts "connections.value #{$1}" if stats =~ /STAT curr_connections (\d+)/
+  end
+end

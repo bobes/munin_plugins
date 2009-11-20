@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+#
+# Plugin to monitor memcache statistics
+
+case ARGV[0]
+when "config"
+  puts %Q{
+    graph_title Memcached bytes used
+    graph_args --base 1024 -l 0
+    graph_vlabel bytes
+    graph_category memcached
+    graph_info This graph monitors the size of the memcached cache.
+    bytes.label bytes used
+    bytes.info Number of bytes currently used
+    bytes.min 0
+    bytes.draw AREA
+    maxbytes.label maximum available
+    maxbytes.info The configured cache size
+    maxbytes.min 0
+  }.gsub!(/^\s*/, "")
+when "autoconf"
+  puts "yes"
+else
+  require "socket"
+
+  TCPSocket.open("localhost", "11211") do |socket|
+    socket.send("stats\r\n", 0)
+    stats = socket.recv(4096)
+    puts "bytes.value #{$1}" if stats =~ /STAT bytes (\d+)/
+    puts "maxbytes.value #{$1}" if stats =~ /STAT limit_maxbytes (\d+)/
+  end
+end

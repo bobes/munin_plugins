@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+#
+# Plugin to monitor memcache statistics
+
+case ARGV[0]
+when "config"
+  puts %Q{
+    graph_title Memcached cached items
+    graph_args --base 1024 -l 0
+    graph_vlabel bytes
+    graph_category memcached
+    graph_info This graph monitors the number of items stored by the memcached server.
+    items.label items
+    items.info Number of cached items
+    items.min 0
+    items.draw AREA
+  }.gsub!(/^\s*/, "")
+when "autoconf"
+  puts "yes"
+else
+  require "socket"
+
+  TCPSocket.open("localhost", "11211") do |socket|
+    socket.send("stats\r\n", 0)
+    stats = socket.recv(4096)
+    puts "items.value #{$1}" if stats =~ /STAT curr_items (\d+)/
+  end
+end
