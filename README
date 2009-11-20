@@ -1,0 +1,6 @@
+Collection of Munin plugins used to monitor Rails and friends.
+
+Parts of the code are greatly inspired by plugins found at:
+
+* http://muninexchange.projects.linpro.no/
+* http://github.com/barttenbrinke/munin-plugins-rails
