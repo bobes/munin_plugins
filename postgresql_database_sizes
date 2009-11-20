@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+#
+# Plugin to monitor PostgreSQL Database Sizes
+
+dbserver="localhost"
+dbuser="postgres"
+
+case ARGV[0]
+when "config"
+  puts %Q{
+    graph_title PostgreSQL Database Sizes
+    graph_args --base 1024 -l 0
+    graph_vlabel bytes
+    graph_category postgresql
+    graph_info This graph shows the size of each database on the PostgreSQL server.
+  }.gsub!(/^\s*/, "")
+  names = `psql -h #{dbserver} -d postgres -U #{dbuser} -tc "SELECT datname FROM pg_database ORDER BY datname;"`.split
+  names.each do |name|
+    puts %Q{
+      #{name}.label #{name}
+      #{name}.type GAUGE
+      #{name}.info Number of bytes currently used by #{name}
+      #{name}.min 0
+    }.gsub!(/^\s*/, "")
+  end
+when "autoconf"
+  puts "yes"
+else
+  lines = `psql -h #{dbserver} -d postgres -U #{dbuser} -tc "SELECT datname, PG_DATABASE_SIZE(oid) FROM pg_database ORDER BY datname;"`.split(/\n/)
+  lines.each do |line|
+    name, size = line.strip.split(/\s*\|\s*/)
+    puts "#{name}.value #{size}"
+  end
+end
